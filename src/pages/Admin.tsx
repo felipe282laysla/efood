@@ -24,7 +24,8 @@ import {
   Award,
   Store,
   Menu,
-  X
+  X,
+  Trello
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useGlobalOrderNotification } from '../hooks/useGlobalOrderNotification';
@@ -39,6 +40,7 @@ import SocialMediaManager from '../components/SocialMediaManager';
 import ColorPalettePicker from '../components/ColorPalettePicker';
 import ReviewsManager from '../components/admin/ReviewsManager';
 import OrdersManager from '../components/admin/OrdersManager';
+import OrderKanban from '../components/admin/OrderKanban';
 import UsersManager from '../components/admin/UsersManager';
 import BusinessHoursManager from '../components/admin/BusinessHoursManager';
 import BusinessConfigManager from '../components/admin/BusinessConfigManager';
@@ -122,6 +124,7 @@ const Admin: React.FC = () => {
     { id: 'banners', label: 'Banners Home', icon: Image, color: 'text-teal-500' },
     { id: 'sponsors', label: 'Patrocinadores', icon: Award, color: 'text-rose-500' },
     { id: 'orders', label: 'Pedidos', icon: ShoppingBag, color: 'text-indigo-500' },
+    { id: 'kanban', label: 'Kanban', icon: Trello, color: 'text-cyan-500' },
     { id: 'users', label: 'Usuários', icon: Users, color: 'text-cyan-500' },
     { id: 'reviews', label: 'Avaliações', icon: Star, color: 'text-amber-500' },
     { id: 'hours', label: 'Horários', icon: Clock, color: 'text-emerald-500' },
@@ -156,6 +159,8 @@ const Admin: React.FC = () => {
         return <SponsorManager />;
       case 'orders':
         return <OrdersManager />;
+      case 'kanban':
+        return <OrderKanban isDarkMode={isDarkMode} />;
       case 'users':
         return <UsersManager />;
       case 'reviews':
