@@ -31,11 +31,18 @@ let config: EvolutionApiConfig | null = null;
  * Inicializar Evolution API com credenciais
  */
 export const initializeEvolutionApi = (domain: string, apiKey: string) => {
+  if (!domain || !apiKey) {
+    console.error('❌ Evolution API: Domain ou API Key vazios!');
+    return;
+  }
+
   config = {
     domain: domain.replace(/\/$/, ''), // Remove trailing slash
     apiKey
   };
-  console.log('✅ Evolution API inicializada:', config.domain);
+  console.log('✅ Evolution API inicializada com sucesso');
+  console.log('   Domain:', config.domain);
+  console.log('   API Key: ***' + config.apiKey.slice(-4));
 };
 
 /**
@@ -46,21 +53,37 @@ export const sendWhatsAppNotification = async (
   message: string
 ): Promise<boolean> => {
   if (!config) {
-    console.warn('⚠️ Evolution API não configurada. Mensagem não será enviada.');
+    console.error('❌ Evolution API não configurada. Mensagem não será enviada.');
+    console.error('   Número:', phoneNumber);
+    console.error('   Mensagem:', message.substring(0, 50) + '...');
+    return false;
+  }
+
+  if (!phoneNumber || !message) {
+    console.error('❌ Telefone ou mensagem vazios');
     return false;
   }
 
   try {
     // Formatar número: remover caracteres especiais e adicionar código do país se necessário
     let formattedNumber = phoneNumber.replace(/\D/g, '');
+    console.log('📱 Número original:', phoneNumber);
+    console.log('📱 Número formatado (após remover caracteres):', formattedNumber);
+    
     if (!formattedNumber.startsWith('55') && formattedNumber.length === 11) {
       formattedNumber = '55' + formattedNumber;
+      console.log('📱 Número com código do país:', formattedNumber);
     }
 
     const payload: SendMessagePayload = {
       number: formattedNumber,
       text: message
     };
+
+    console.log('📤 Enviando mensagem para Evolution API...');
+    console.log('   URL:', `${config.domain}/message/sendText/default`);
+    console.log('   Número:', formattedNumber);
+    console.log('   Tamanho da mensagem:', message.length + ' caracteres');
 
     const response = await fetch(`${config.domain}/message/sendText/default`, {
       method: 'POST',
@@ -71,17 +94,21 @@ export const sendWhatsAppNotification = async (
       body: JSON.stringify(payload)
     });
 
+    console.log('📬 Status HTTP:', response.status);
+
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
       console.error('❌ Erro ao enviar mensagem Evolution API:', errorData);
       return false;
     }
 
     const result = await response.json();
-    console.log('✅ Mensagem enviada via Evolution API:', result);
+    console.log('✅ Mensagem enviada com sucesso!');
+    console.log('   Response:', result);
     return true;
   } catch (error) {
     console.error('❌ Erro ao conectar com Evolution API:', error);
+    console.error('   Erro completo:', error instanceof Error ? error.message : error);
     return false;
   }
 };

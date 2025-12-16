@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Key, Send, AlertCircle, CheckCircle, Eye, EyeOff, Loader } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { testEvolutionApiConnection } from '../../services/evolutionApiService';
+import { testMercadoPagoConnection } from '../../services/mercadoPagoService';
 
 interface IntegrationConfig {
   evolutionApiDomain: string;
@@ -25,13 +26,25 @@ const IntegrationManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) =
     sendWhatsappNotifications: businessConfig.evolutionApi?.sendNotifications || false
   });
 
+  const [paymentMethodsState, setPaymentMethodsState] = useState({
+    card: businessConfig.paymentMethods?.card ?? true,
+    pix: businessConfig.paymentMethods?.pix ?? true,
+    cash: businessConfig.paymentMethods?.cash ?? true,
+    whatsapp: businessConfig.paymentMethods?.whatsapp ?? true
+  });
+
   const [showApiKeys, setShowApiKeys] = useState({
     evolution: false,
     mercadoPago: false
   });
 
   const [testingConnection, setTestingConnection] = useState(false);
+  const [testingMercadoPago, setTestingMercadoPago] = useState(false);
   const [connectionResult, setConnectionResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
+  const [mercadoPagoResult, setMercadoPagoResult] = useState<{
     success: boolean;
     message: string;
   } | null>(null);
@@ -48,10 +61,12 @@ const IntegrationManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) =
   const handleTestConnection = async () => {
     setTestingConnection(true);
     try {
+      console.log('🧪 Testando conexão com Evolution API...');
       const result = await testEvolutionApiConnection();
       setConnectionResult(result);
       setTimeout(() => setConnectionResult(null), 5000);
     } catch (error) {
+      console.error('❌ Erro ao testar conexão:', error);
       setConnectionResult({
         success: false,
         message: 'Erro ao testar conexão'
@@ -61,8 +76,28 @@ const IntegrationManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) =
     }
   };
 
+  const handleTestMercadoPagoConnection = async () => {
+    setTestingMercadoPago(true);
+    try {
+      console.log('🧪 Testando conexão com Mercado Pago...');
+      const result = await testMercadoPagoConnection();
+      setMercadoPagoResult(result);
+      setTimeout(() => setMercadoPagoResult(null), 5000);
+    } catch (error) {
+      console.error('❌ Erro ao testar conexão Mercado Pago:', error);
+      setMercadoPagoResult({
+        success: false,
+        message: 'Erro ao testar conexão'
+      });
+    } finally {
+      setTestingMercadoPago(false);
+    }
+  };
+
   const handleSaveConfig = async () => {
     try {
+      console.log('💾 Salvando configurações de integração...');
+      
       await updateBusinessConfig({
         evolutionApi: {
           isEnabled: config.evolutionApiEnabled,
@@ -74,13 +109,22 @@ const IntegrationManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) =
           isEnabled: config.mercadoPagoEnabled,
           accessToken: config.mercadoPagoAccessToken,
           publicKey: config.mercadoPagoPublicKey
+        },
+        paymentMethods: {
+          card: paymentMethodsState.card,
+          pix: paymentMethodsState.pix,
+          cash: paymentMethodsState.cash,
+          whatsapp: paymentMethodsState.whatsapp
         }
       });
 
+      console.log('✅ Configurações salvas com sucesso!');
       setSuccessMessage('✅ Configurações salvas com sucesso!');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
-      console.error('Erro ao salvar configurações:', error);
+      console.error('❌ Erro ao salvar configurações:', error);
+      setSuccessMessage('❌ Erro ao salvar configurações!');
+      setTimeout(() => setSuccessMessage(''), 3000);
     }
   };
 
@@ -315,6 +359,48 @@ const IntegrationManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) =
                   Chave pública para inicializar o Mercado Pago no navegador
                 </p>
               </div>
+
+              {/* Test Connection Button */}
+              <button
+                onClick={handleTestMercadoPagoConnection}
+                disabled={testingMercadoPago || !config.mercadoPagoAccessToken}
+                className={`w-full px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors ${
+                  testingMercadoPago || !config.mercadoPagoAccessToken
+                    ? 'opacity-50 cursor-not-allowed bg-gray-500'
+                    : 'bg-blue-500 hover:bg-blue-600 text-white'
+                }`}
+              >
+                {testingMercadoPago ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Testando...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    Testar Conexão Mercado Pago
+                  </>
+                )}
+              </button>
+
+              {mercadoPagoResult && (
+                <div
+                  className={`p-3 rounded-lg flex items-start gap-2 ${
+                    mercadoPagoResult.success
+                      ? 'bg-green-100 border border-green-400'
+                      : 'bg-red-100 border border-red-400'
+                  }`}
+                >
+                  {mercadoPagoResult.success ? (
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  )}
+                  <p className={mercadoPagoResult.success ? 'text-green-700' : 'text-red-700'}>
+                    {mercadoPagoResult.message}
+                  </p>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -328,10 +414,8 @@ const IntegrationManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) =
           <label className={`flex items-center gap-2 cursor-pointer`}>
             <input
               type="checkbox"
-              defaultChecked={businessConfig.paymentMethods?.card ?? true}
-              onChange={(e) => {
-                // Será salvo junto com outras configs
-              }}
+              checked={paymentMethodsState.card}
+              onChange={(e) => setPaymentMethodsState(prev => ({ ...prev, card: e.target.checked }))}
               className="w-4 h-4"
             />
             <span className={textColor}>💳 Cartão de Crédito (Mercado Pago)</span>
@@ -340,10 +424,8 @@ const IntegrationManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) =
           <label className={`flex items-center gap-2 cursor-pointer`}>
             <input
               type="checkbox"
-              defaultChecked={businessConfig.paymentMethods?.pix ?? true}
-              onChange={(e) => {
-                // Será salvo junto com outras configs
-              }}
+              checked={paymentMethodsState.pix}
+              onChange={(e) => setPaymentMethodsState(prev => ({ ...prev, pix: e.target.checked }))}
               className="w-4 h-4"
             />
             <span className={textColor}>🔑 PIX (Mercado Pago)</span>
@@ -352,10 +434,8 @@ const IntegrationManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) =
           <label className={`flex items-center gap-2 cursor-pointer`}>
             <input
               type="checkbox"
-              defaultChecked={businessConfig.paymentMethods?.cash ?? true}
-              onChange={(e) => {
-                // Será salvo junto com outras configs
-              }}
+              checked={paymentMethodsState.cash}
+              onChange={(e) => setPaymentMethodsState(prev => ({ ...prev, cash: e.target.checked }))}
               className="w-4 h-4"
             />
             <span className={textColor}>💰 Dinheiro na Entrega</span>
@@ -364,10 +444,8 @@ const IntegrationManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) =
           <label className={`flex items-center gap-2 cursor-pointer`}>
             <input
               type="checkbox"
-              defaultChecked={businessConfig.paymentMethods?.whatsapp ?? true}
-              onChange={(e) => {
-                // Será salvo junto com outras configs
-              }}
+              checked={paymentMethodsState.whatsapp}
+              onChange={(e) => setPaymentMethodsState(prev => ({ ...prev, whatsapp: e.target.checked }))}
               className="w-4 h-4"
             />
             <span className={textColor}>💬 Negociação via WhatsApp</span>

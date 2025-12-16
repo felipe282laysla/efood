@@ -14,22 +14,41 @@ const CustomerNotificationCenter: React.FC<CustomerNotificationCenterProps> = ({
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    if (!customerPhone) return;
+    if (!customerPhone) {
+      console.warn('⚠️ CustomerNotificationCenter: telefone do cliente não fornecido');
+      return;
+    }
+
+    console.log('🔔 CustomerNotificationCenter: Iniciando listener para:', customerPhone);
 
     // Subscrever às notificações do cliente
     const unsubscribe = getCustomerNotifications(customerPhone, (notifs) => {
+      console.log('📬 Notificações recebidas:', notifs.length);
+      notifs.forEach(n => {
+        console.log(`   - ${n.orderId}: ${n.message}`);
+      });
+      
       setNotifications(notifs);
-      setUnreadCount(notifs.filter(n => !n.read).length);
+      const unread = notifs.filter(n => !n.read).length;
+      setUnreadCount(unread);
+      
+      if (unread > 0) {
+        console.log('🔴 Notificações não lidas:', unread);
+      }
     });
 
-    return () => unsubscribe();
+    return () => {
+      console.log('🔕 CustomerNotificationCenter: Limpando listener');
+      unsubscribe();
+    };
   }, [customerPhone]);
 
   const handleMarkAsRead = async (notificationId: string) => {
     try {
+      console.log('✅ Marcando notificação como lida:', notificationId);
       await markNotificationAsRead(notificationId);
     } catch (error) {
-      console.error('Erro ao marcar notificação como lida:', error);
+      console.error('❌ Erro ao marcar notificação como lida:', error);
     }
   };
 
