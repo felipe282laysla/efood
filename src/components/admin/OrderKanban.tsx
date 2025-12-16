@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { Clock, CheckCircle, Truck, Package, Phone, MapPin, Trash2, Eye, X } from 'lucide-react';
-import { Order } from '../types';
-import { useApp } from '../context/AppContext';
-import { useNotification } from '../context/NotificationContext';
+import { Order } from '../../types';
+import { useApp } from '../../context/AppContext';
+import { useNotification } from '../../context/NotificationContext';
 
 interface OrderKanbanProps {
   isDarkMode: boolean;
