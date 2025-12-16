@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f97316" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Delicia de Bom" />
+    <link rel="manifest" href="/manifest.json" />
     <title>Delicia de bom - Cardápio Digital</title>
     <meta name="description" content="Trazendo momentos felizes e deliciosos - Entrega rápida com a menor taxa de frete de Juazeiro e Petrolina" />
     <meta name="keywords" content="hambúrguer, delivery, juazeiro, petrolina, comida" />
@@ -11,5 +17,14 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {
+            // Service worker registration failed, app will still work
+          });
+        });
+      }
+    </script>
   </body>
 </html>
