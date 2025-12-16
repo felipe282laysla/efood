@@ -1,20 +1,29 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { Clock, CheckCircle, Truck, Package, Phone, MapPin, Trash2, Eye, X } from 'lucide-react';
 import { Order } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { useNotification } from '../../context/NotificationContext';
 import { updateOrder, saveCustomerNotification } from '../../services/firebaseService';
+import { sendOrderStatusNotification, initializeEvolutionApi, isEvolutionApiConfigured } from '../../services/evolutionApiService';
 
 interface OrderKanbanProps {
   isDarkMode: boolean;
 }
 
 const OrderKanban: React.FC<OrderKanbanProps> = ({ isDarkMode }) => {
-  const { orders } = useApp();
+  const { orders, businessConfig } = useApp();
   const { addNotification } = useNotification();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+
+  // Inicializar Evolution API quando o componente montar e config estiver disponível
+  useEffect(() => {
+    if (businessConfig.evolutionApi?.isEnabled && businessConfig.evolutionApi?.domain && businessConfig.evolutionApi?.apiKey) {
+      initializeEvolutionApi(businessConfig.evolutionApi.domain, businessConfig.evolutionApi.apiKey);
+      console.log('✅ Evolution API inicializada no Kanban');
+    }
+  }, [businessConfig.evolutionApi]);
 
   const statusLabels = {
     pending: 'Novos Pedidos',
@@ -80,6 +89,34 @@ const OrderKanban: React.FC<OrderKanbanProps> = ({ isDarkMode }) => {
             read: false
           });
           console.log('Notificação de cliente salva para:', orderToUpdate.customerPhone);
+
+          // Enviar notificação via Evolution API (WhatsApp) se habilitado
+          if (businessConfig.evolutionApi?.isEnabled && businessConfig.evolutionApi?.sendNotifications && isEvolutionApiConfigured()) {
+            try {
+              const whatsappSent = await sendOrderStatusNotification(
+                orderToUpdate.customerPhone,
+                orderId,
+                newStatus,
+                statusMessages[newStatus],
+                businessConfig.name || 'Nossa Loja'
+              );
+              
+              if (whatsappSent) {
+                console.log('✅ Notificação enviada via WhatsApp para:', orderToUpdate.customerPhone);
+                addNotification({
+                  type: 'success',
+                  title: 'WhatsApp Enviado',
+                  message: `Notificação enviada para ${orderToUpdate.customerPhone}`,
+                  duration: 3000
+                });
+              } else {
+                console.warn('⚠️ Falha ao enviar via Evolution API, mas notificação salva localmente');
+              }
+            } catch (whatsappError) {
+              console.error('❌ Erro ao enviar WhatsApp:', whatsappError);
+              // Continua normalmente, a notificação local foi salva
+            }
+          }
         }
       }
     } catch (error) {

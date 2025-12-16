@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Trash2, Plus, Minus, MapPin, User, MessageSquare, ShoppingBag, Phone, ExternalLink } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import PaymentSelector from './PaymentSelector';
+import { sendOrderConfirmation, initializeEvolutionApi, isEvolutionApiConfigured } from '../services/evolutionApiService';
 
 interface CartProps {
   isOpen: boolean;
@@ -29,6 +30,13 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose, onOrderCreated }) => {
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [orderProcessing, setOrderProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'pix' | 'cash' | 'whatsapp'>('whatsapp');
+
+  // Inicializar Evolution API quando config estiver disponível
+  useEffect(() => {
+    if (businessConfig.evolutionApi?.isEnabled && businessConfig.evolutionApi?.domain && businessConfig.evolutionApi?.apiKey) {
+      initializeEvolutionApi(businessConfig.evolutionApi.domain, businessConfig.evolutionApi.apiKey);
+    }
+  }, [businessConfig.evolutionApi]);
 
   if (!isOpen) return null;
 
@@ -143,7 +151,31 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose, onOrderCreated }) => {
         onOrderCreated(customerPhone.trim());
       }
 
-      // 5. PREPARAR MENSAGEM DO WHATSAPP
+      // 4.5 ENVIAR CONFIRMAÇÃO VIA EVOLUTION API SE HABILITADO
+      if (customerPhone.trim() && businessConfig.evolutionApi?.isEnabled && isEvolutionApiConfigured()) {
+        try {
+          // Construir lista de itens para confirmação
+          let itemsList = '';
+          cartItems.forEach(item => {
+            itemsList += `${item.product.name} (${item.quantity}x)\n`;
+          });
+
+          await sendOrderConfirmation(
+            customerPhone.trim(),
+            {
+              orderId: orderData.id || 'novo',
+              customerName: customerName.trim(),
+              items: itemsList,
+              total: getTotalPrice(),
+              estimatedTime: '45 minutos'
+            },
+            businessConfig.name || 'Nossa Loja'
+          );
+          console.log('✅ Confirmação de pedido enviada via WhatsApp');
+        } catch (whatsappError) {
+          console.warn('⚠️ Erro ao enviar confirmação via WhatsApp, mas pedido foi salvo:', whatsappError);
+        }
+      }
       const businessName = businessConfig.name || 'Loja';
       
       // Construir lista de itens detalhada
