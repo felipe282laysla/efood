@@ -10,7 +10,7 @@ interface OrderKanbanProps {
 }
 
 const OrderKanban: React.FC<OrderKanbanProps> = ({ isDarkMode }) => {
-  const { orders, updateOrder, deleteOrder } = useApp();
+  const { orders, updateOrder } = useApp();
   const { addNotification } = useNotification();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -77,25 +77,13 @@ const OrderKanban: React.FC<OrderKanbanProps> = ({ isDarkMode }) => {
   };
 
   const handleDeleteOrder = async (orderId: string) => {
-    if (confirm('Tem certeza que deseja deletar este pedido?')) {
-      try {
-        await deleteOrder(orderId);
-        addNotification({
-          type: 'success',
-          title: 'Pedido deletado',
-          message: 'O pedido foi removido com sucesso',
-          duration: 3000
-        });
-      } catch (error) {
-        console.error('Erro ao deletar pedido:', error);
-        addNotification({
-          type: 'error',
-          title: 'Erro',
-          message: 'Erro ao deletar pedido',
-          duration: 3000
-        });
-      }
-    }
+    // Função de delete será implementada quando deleteOrder existir no AppContext
+    addNotification({
+      type: 'info',
+      title: 'Função não disponível',
+      message: 'Delete via painel de Pedidos regular',
+      duration: 3000
+    });
   };
 
   const bgColor = isDarkMode ? 'bg-gray-900' : 'bg-gray-50';
