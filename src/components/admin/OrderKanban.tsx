@@ -4,13 +4,14 @@ import { Clock, CheckCircle, Truck, Package, Phone, MapPin, Trash2, Eye, X } fro
 import { Order } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { useNotification } from '../../context/NotificationContext';
+import { updateOrder, saveCustomerNotification } from '../../services/firebaseService';
 
 interface OrderKanbanProps {
   isDarkMode: boolean;
 }
 
 const OrderKanban: React.FC<OrderKanbanProps> = ({ isDarkMode }) => {
-  const { orders, updateOrder } = useApp();
+  const { orders } = useApp();
   const { addNotification } = useNotification();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -48,9 +49,10 @@ const OrderKanban: React.FC<OrderKanbanProps> = ({ isDarkMode }) => {
     try {
       const orderToUpdate = orders.find(o => o.id === orderId);
       if (orderToUpdate) {
+        // Atualizar o pedido no Firestore
         await updateOrder(orderId, { ...orderToUpdate, status: newStatus });
         
-        // Notificar mudança de status
+        // Mensagens de status para notificação
         const statusMessages = {
           pending: '📋 Novo pedido recebido!',
           preparing: '👨‍🍳 Seu pedido está em preparo',
@@ -58,12 +60,27 @@ const OrderKanban: React.FC<OrderKanbanProps> = ({ isDarkMode }) => {
           delivered: '🚗 Pedido entregue com sucesso!'
         };
 
+        // Notificação do admin
         addNotification({
           type: newStatus === 'delivered' ? 'success' : 'info',
           title: `Pedido #${orderId.slice(0, 6)}`,
           message: statusMessages[newStatus],
           duration: 5000
         });
+
+        // Salvar notificação para o cliente
+        if (orderToUpdate.customerPhone) {
+          await saveCustomerNotification({
+            orderId,
+            customerPhone: orderToUpdate.customerPhone,
+            customerName: orderToUpdate.customerName,
+            status: newStatus,
+            message: statusMessages[newStatus],
+            timestamp: new Date(),
+            read: false
+          });
+          console.log('Notificação de cliente salva para:', orderToUpdate.customerPhone);
+        }
       }
     } catch (error) {
       console.error('Erro ao atualizar status do pedido:', error);

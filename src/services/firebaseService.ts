@@ -26,7 +26,7 @@ import {
   deleteObject
 } from 'firebase/storage';
 import { db, auth, storage } from '../config/firebase';
-import { Product, BusinessConfig, Category, Promotion, Review, User, AdminCredentials, Order, GlobalAddOn, GiveawayParticipant, HomeBanner, Sponsor } from '../types';
+import { Product, BusinessConfig, Category, Promotion, Review, User, AdminCredentials, Order, GlobalAddOn, GiveawayParticipant, HomeBanner, Sponsor, CustomerNotification } from '../types';
 
 // Collections
 const COLLECTIONS = {
@@ -41,7 +41,8 @@ const COLLECTIONS = {
   GLOBAL_ADDONS: 'globalAddons',
   GIVEAWAY_PARTICIPANTS: 'giveawayParticipants',
   HOME_BANNERS: 'homeBanners',
-  SPONSORS: 'sponsors'
+  SPONSORS: 'sponsors',
+  CUSTOMER_NOTIFICATIONS: 'customerNotifications'
 };
 
 // Image Upload with better error handling
@@ -819,5 +820,66 @@ export const initializeAdminCredentials = async () => {
     }
   } catch (error) {
     console.error('Erro ao inicializar credenciais do admin:', error);
+  }
+};
+
+// Customer Notifications - Funções para enviar notificações aos clientes
+export const saveCustomerNotification = async (notification: Omit<CustomerNotification, 'id'>) => {
+  try {
+    const notifData = { ...notification };
+    if (notification.timestamp) {
+      notifData.timestamp = Timestamp.fromDate(notification.timestamp);
+    }
+    const docRef = await addDoc(collection(db, COLLECTIONS.CUSTOMER_NOTIFICATIONS), notifData);
+    console.log('Notificação de cliente salva:', docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.error('Erro ao salvar notificação de cliente:', error);
+    throw error;
+  }
+};
+
+export const getCustomerNotifications = (customerPhone: string, callback: (notifications: CustomerNotification[]) => void) => {
+  const q = query(
+    collection(db, COLLECTIONS.CUSTOMER_NOTIFICATIONS),
+    where('customerPhone', '==', customerPhone),
+    orderBy('timestamp', 'desc')
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const notifications = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      timestamp: doc.data().timestamp?.toDate() || new Date()
+    })) as CustomerNotification[];
+    callback(notifications);
+  });
+};
+
+export const getCustomerNotificationsByOrderId = (orderId: string, callback: (notifications: CustomerNotification[]) => void) => {
+  const q = query(
+    collection(db, COLLECTIONS.CUSTOMER_NOTIFICATIONS),
+    where('orderId', '==', orderId),
+    orderBy('timestamp', 'desc')
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const notifications = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      timestamp: doc.data().timestamp?.toDate() || new Date()
+    })) as CustomerNotification[];
+    callback(notifications);
+  });
+};
+
+export const markNotificationAsRead = async (notificationId: string) => {
+  try {
+    await updateDoc(doc(db, COLLECTIONS.CUSTOMER_NOTIFICATIONS, notificationId), {
+      read: true
+    });
+  } catch (error) {
+    console.error('Erro ao marcar notificação como lida:', error);
+    throw error;
   }
 };

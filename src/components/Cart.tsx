@@ -5,9 +5,10 @@ import { useApp } from '../context/AppContext';
 interface CartProps {
   isOpen: boolean;
   onClose: () => void;
+  onOrderCreated?: (customerPhone: string) => void;
 }
 
-const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
+const Cart: React.FC<CartProps> = ({ isOpen, onClose, onOrderCreated }) => {
   const { 
     cartItems, 
     removeFromCart, 
@@ -132,6 +133,11 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
       // 4. SALVAR PEDIDO NO BANCO DE DADOS
       await addOrder(orderData);
       console.log('✅ Pedido salvo com sucesso no Firebase!');
+
+      // Notificar ao Menu que um pedido foi criado para que mostre notificações
+      if (customerPhone.trim() && onOrderCreated) {
+        onOrderCreated(customerPhone.trim());
+      }
 
       // 5. PREPARAR MENSAGEM DO WHATSAPP
       const businessName = businessConfig.name || 'Loja';

@@ -253,6 +253,17 @@ export interface Order {
   }[];
 }
 
+export interface CustomerNotification {
+  id: string;
+  orderId: string;
+  customerPhone: string;
+  customerName: string;
+  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled' | 'accepted' | 'out_for_delivery' | 'rejected';
+  message: string;
+  timestamp: Date;
+  read: boolean;
+}
+
 export interface AdminCredentials {
   email: string;
   password: string;

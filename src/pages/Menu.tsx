@@ -12,6 +12,7 @@ import BusinessStatusBanner from '../components/BusinessStatusBanner';
 import HeroBanner from '../components/HeroBanner';
 import HomeBannerCarousel from '../components/HomeBannerCarousel';
 import SponsorsSection from '../components/SponsorsSection';
+import CustomerNotificationCenter from '../components/CustomerNotificationCenter';
 import { Product } from '../types';
 
 const Menu: React.FC = () => {
@@ -20,6 +21,7 @@ const Menu: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [customerPhone, setCustomerPhone] = useState<string | null>(null);
 
   // Set default active category when categories are loaded
   useEffect(() => {
@@ -178,7 +180,16 @@ const Menu: React.FC = () => {
       <Cart
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
+        onOrderCreated={(phone) => setCustomerPhone(phone)}
       />
+
+      {/* Centro de notificações para clientes */}
+      {customerPhone && (
+        <CustomerNotificationCenter 
+          customerPhone={customerPhone} 
+          isDarkMode={isDarkMode}
+        />
+      )}
     </div>
   );
 };
