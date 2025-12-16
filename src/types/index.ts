@@ -169,6 +169,27 @@ export interface BusinessConfig {
     checkoutUrl?: string;
     checkoutText?: string;
   };
+  // Nova funcionalidade: Configuração Evolution API
+  evolutionApi?: {
+    isEnabled: boolean;
+    domain: string;
+    apiKey: string;
+    sendNotifications: boolean; // Se deve enviar notificações via WhatsApp
+  };
+  // Nova funcionalidade: Configuração Mercado Pago
+  mercadoPago?: {
+    isEnabled: boolean;
+    accessToken: string;
+    publicKey: string;
+    webhookSecret?: string;
+  };
+  // Nova funcionalidade: Métodos de pagamento
+  paymentMethods?: {
+    card: boolean;
+    pix: boolean;
+    cash: boolean;
+    whatsapp: boolean; // Método antigo, ainda disponível
+  };
 }
 
 export interface Category {
@@ -251,6 +272,10 @@ export interface Order {
     promotionId: string;
     participantNumber: number;
   }[];
+  // Nova funcionalidade: Método e informações de pagamento
+  paymentMethod?: 'whatsapp' | 'card' | 'pix' | 'cash';
+  paymentStatus?: 'pending' | 'completed' | 'failed' | 'refunded';
+  mercadoPagoId?: string; // ID da transação no Mercado Pago
 }
 
 export interface CustomerNotification {

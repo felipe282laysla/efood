@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Trash2, Plus, Minus, MapPin, User, MessageSquare, ShoppingBag, Phone, ExternalLink } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import PaymentSelector from './PaymentSelector';
 
 interface CartProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose, onOrderCreated }) => {
   const [customerAddress, setCustomerAddress] = useState('');
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [orderProcessing, setOrderProcessing] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'pix' | 'cash' | 'whatsapp'>('whatsapp');
 
   if (!isOpen) return null;
 
@@ -107,14 +109,16 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose, onOrderCreated }) => {
       console.log('✅ Número do WhatsApp encontrado:', whatsappNumber);
 
       // 3. PREPARAR DADOS DO PEDIDO
-      const orderData = {
+      const orderData: any = {
         customerName: customerName.trim(),
         customerLocation: customerAddress.trim(),
         items: cartItems,
         total: getTotalPrice(),
         status: 'pending' as const,
         date: new Date(),
-        isFromLoggedUser: false
+        isFromLoggedUser: false,
+        paymentMethod: paymentMethod,
+        paymentStatus: paymentMethod === 'card' || paymentMethod === 'pix' ? 'pending' : 'pending'
       };
 
       // Adicionar telefone se fornecido
@@ -392,6 +396,21 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose, onOrderCreated }) => {
                   </p>
                 </div>
               )}
+
+              {/* Seletor de Método de Pagamento */}
+              <div className="mb-4">
+                <PaymentSelector
+                  selectedMethod={paymentMethod}
+                  onSelect={setPaymentMethod}
+                  isDarkMode={isDarkMode}
+                  availableMethods={businessConfig.paymentMethods || {
+                    card: true,
+                    pix: true,
+                    cash: true,
+                    whatsapp: true
+                  }}
+                />
+              </div>
 
               {/* Formulário para dados do cliente - apenas se WhatsApp estiver ativo */}
               {showWhatsAppButton && (

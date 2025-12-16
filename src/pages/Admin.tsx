@@ -25,7 +25,8 @@ import {
   Store,
   Menu,
   X,
-  Trello
+  Trello,
+  Zap
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useGlobalOrderNotification } from '../hooks/useGlobalOrderNotification';
@@ -50,6 +51,7 @@ import AdminCredentialsManager from '../components/admin/AdminCredentialsManager
 import HomeBannerManager from '../components/admin/HomeBannerManager';
 import SponsorManager from '../components/admin/SponsorManager';
 import StoreModeManager from '../components/admin/StoreModeManager';
+import IntegrationManager from '../components/admin/IntegrationManager';
 
 const Admin: React.FC = () => {
   const navigate = useNavigate();
@@ -115,6 +117,7 @@ const Admin: React.FC = () => {
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, color: 'text-blue-500' },
     { id: 'config', label: 'Configurações', icon: Settings, color: 'text-gray-500' },
     { id: 'credentials', label: 'Login & Senha', icon: Key, color: 'text-red-500' },
+    { id: 'integrations', label: 'Integrações', icon: Zap, color: 'text-yellow-500' },
     { id: 'storemode', label: 'Modo da Loja', icon: Store, color: 'text-indigo-500' },
     { id: 'products', label: 'Produtos', icon: Package, color: 'text-green-500' },
     { id: 'categories', label: 'Categorias', icon: Tag, color: 'text-purple-500' },
@@ -141,6 +144,8 @@ const Admin: React.FC = () => {
         return <BusinessConfigManager />;
       case 'credentials':
         return <AdminCredentialsManager />;
+      case 'integrations':
+        return <IntegrationManager isDarkMode={isDarkMode} />;
       case 'storemode':
         return <StoreModeManager />;
       case 'products':
